@@ -6,6 +6,12 @@ MEMORA AI is a locally running AI chatbot developed using Python, Streamlit, Oll
 
 The application uses a locally hosted Large Language Model (LLM), allowing users to interact with an AI assistant without depending on external AI APIs.
 
+<img width="904" height="384" alt="image" src="https://github.com/user-attachments/assets/12dc72c9-2605-4086-8a6f-66f6f5e4e3c9" />
+<img width="869" height="344" alt="image" src="https://github.com/user-attachments/assets/6a555c6e-7dbf-41a2-b4ca-e3abda5fc615" />
+<img width="912" height="256" alt="image" src="https://github.com/user-attachments/assets/7a31ccc9-25ff-4fe7-98a5-4a94b1eb8b68" />
+<img width="904" height="364" alt="image" src="https://github.com/user-attachments/assets/039402fa-785c-48ec-a2bc-9d3cb90fa93c" />
+<img width="895" height="336" alt="image" src="https://github.com/user-attachments/assets/60bc4aa7-4d9e-4169-aa5b-953daadabb91" />
+
 ## Project Objectives
 
 - Develop a simple and interactive AI chatbot.
