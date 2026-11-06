@@ -11,6 +11,9 @@ The application uses a locally hosted Large Language Model (LLM), allowing users
 <img width="912" height="256" alt="image" src="https://github.com/user-attachments/assets/7a31ccc9-25ff-4fe7-98a5-4a94b1eb8b68" />
 <img width="904" height="364" alt="image" src="https://github.com/user-attachments/assets/039402fa-785c-48ec-a2bc-9d3cb90fa93c" />
 <img width="895" height="336" alt="image" src="https://github.com/user-attachments/assets/60bc4aa7-4d9e-4169-aa5b-953daadabb91" />
+<img width="950" height="433" alt="image" src="https://github.com/user-attachments/assets/12ffb496-ec1d-4dc1-b78e-08e1c0afa87d" />
+<img width="225" height="436" alt="image" src="https://github.com/user-attachments/assets/fc15df93-3260-4f2e-8259-749ca9df3421" />
+
 
 ## Project Objectives
 
