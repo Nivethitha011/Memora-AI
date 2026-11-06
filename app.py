@@ -8,9 +8,9 @@ from langchain_core.chat_history import InMemoryChatMessageHistory
 from langchain_core.vectorstores import InMemoryVectorStore
 
 
-# --------------------------------------------------
-# PAGE CONFIGURATION
-# --------------------------------------------------
+# ==================================================
+# 1. PAGE CONFIGURATION
+# ==================================================
 
 st.set_page_config(
     page_title="MEMORA AI",
@@ -19,38 +19,62 @@ st.set_page_config(
 )
 
 
-# --------------------------------------------------
-# CUSTOM CSS
-# --------------------------------------------------
+# ==================================================
+# 2. CUSTOM CSS - FONT AND BACKGROUND COLOURS
+# ==================================================
 
 st.markdown("""
 <style>
 
-/* Main background */
+/* Main application background */
 .stApp {
     background: linear-gradient(135deg, #101827, #202d44);
-    color: #ffffff;
+    color: #ffffff !important;
 }
 
-/* Headings */
-h1, h2, h3, p, label {
-    color: #ffffff !important;
+/* Main content text */
+.stApp [data-testid="stMarkdownContainer"],
+.stApp [data-testid="stMarkdownContainer"] p,
+.stApp [data-testid="stMarkdownContainer"] li,
+.stApp [data-testid="stMarkdownContainer"] span,
+.stApp [data-testid="stMarkdownContainer"] strong,
+.stApp [data-testid="stMarkdownContainer"] h1,
+.stApp [data-testid="stMarkdownContainer"] h2,
+.stApp [data-testid="stMarkdownContainer"] h3 {
+    color: #f8fafc !important;
 }
 
 /* Sidebar */
 [data-testid="stSidebar"] {
-    background-color: #111b2d;
+    background-color: #111b2d !important;
 }
 
-/* Chat input box */
+[data-testid="stSidebar"] * {
+    color: #ffffff !important;
+}
+
+/* Chat message background */
+[data-testid="stChatMessage"] {
+    background-color: #26354d !important;
+    border-radius: 12px !important;
+    padding: 14px !important;
+}
+
+/* Chat response text */
+[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"],
+[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] * {
+    color: #ffffff !important;
+}
+
+/* Chat input container */
 [data-testid="stChatInput"] {
     background-color: #ffffff !important;
     border: 2px solid #817cf5 !important;
     border-radius: 12px !important;
 }
 
-/* Typed text */
-[data-testid="stChatInput"] textarea {
+/* Chat input typed text */
+.stApp [data-testid="stChatInput"] textarea {
     background-color: #ffffff !important;
     color: #111111 !important;
     -webkit-text-fill-color: #111111 !important;
@@ -58,78 +82,88 @@ h1, h2, h3, p, label {
     font-size: 16px !important;
 }
 
-/* Placeholder */
-[data-testid="stChatInput"] textarea::placeholder {
-    color: #555555 !important;
-    -webkit-text-fill-color: #555555 !important;
+/* Chat input placeholder */
+.stApp [data-testid="stChatInput"] textarea::placeholder {
+    color: #666666 !important;
+    -webkit-text-fill-color: #666666 !important;
     opacity: 1 !important;
 }
 
-/* Other text inputs */
-[data-testid="stTextInput"] input,
-[data-testid="stTextArea"] textarea {
+/* Other input fields */
+.stApp [data-testid="stTextInput"] input,
+.stApp [data-testid="stTextArea"] textarea {
     background-color: #ffffff !important;
     color: #111111 !important;
     -webkit-text-fill-color: #111111 !important;
     caret-color: #111111 !important;
 }
 
-/* Chat messages */
-[data-testid="stChatMessage"] {
-    background-color: #26354d;
-    border-radius: 12px;
-    padding: 12px;
+/* Select box */
+.stApp [data-baseweb="select"] * {
+    color: #111111 !important;
 }
 
 /* Buttons */
 .stButton button {
-    background-color: #635bdb;
+    background-color: #635bdb !important;
     color: #ffffff !important;
-    border-radius: 8px;
-    border: none;
+    border: none !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
 }
 
+/* Button hover */
 .stButton button:hover {
-    background-color: #817cf5;
+    background-color: #817cf5 !important;
     color: #ffffff !important;
 }
 
 /* Download button */
 .stDownloadButton button {
-    background-color: #635bdb;
+    background-color: #635bdb !important;
     color: #ffffff !important;
-    border-radius: 8px;
+    border-radius: 8px !important;
+}
+
+/* Horizontal line */
+hr {
+    border-color: #52627b !important;
+}
+
+/* Footer */
+footer {
+    visibility: hidden;
 }
 
 </style>
 """, unsafe_allow_html=True)
 
 
-# --------------------------------------------------
-# MEMORY TYPES
-# --------------------------------------------------
+# ==================================================
+# 3. MEMORY TYPES
+# ==================================================
 
 MEMORY_TYPES = {
     "Buffer Memory":
         "Stores the complete conversation history.",
 
     "Summary Memory":
-        "Creates a summary of previous conversations.",
+        "Creates a short summary of previous conversations.",
 
     "Buffer Window Memory":
-        "Keeps only the latest conversation messages.",
+        "Keeps only the latest six messages.",
 
     "Vector Store Memory":
-        "Uses embeddings to retrieve relevant past information.",
+        "Retrieves relevant past information using embeddings.",
 
     "Entity Memory":
-        "Remembers important names, facts and entities."
+        "Remembers important names, people and facts."
 }
 
 
-# --------------------------------------------------
-# CREATE MEMORY
-# --------------------------------------------------
+# ==================================================
+# 4. CREATE MEMORY
+# ==================================================
 
 def create_memory():
 
@@ -143,9 +177,9 @@ def create_memory():
     }
 
 
-# --------------------------------------------------
-# SESSION STATE
-# --------------------------------------------------
+# ==================================================
+# 5. SESSION STATE
+# ==================================================
 
 if "session_id" not in st.session_state:
 
@@ -160,14 +194,28 @@ if "memory_data" not in st.session_state:
     }
 
 
-if "active_memory" not in st.session_state:
+# ==================================================
+# 6. LOAD LOCAL MODELS
+# ==================================================
 
-    st.session_state.active_memory = "Buffer Memory"
+@st.cache_resource
+def load_models():
+
+    chat_model = ChatOllama(
+        model="gemma3:1b",
+        temperature=0.7
+    )
+
+    embedding_model = OllamaEmbeddings(
+        model="embeddinggemma"
+    )
+
+    return chat_model, embedding_model
 
 
-# --------------------------------------------------
-# SIDEBAR
-# --------------------------------------------------
+# ==================================================
+# 7. SIDEBAR
+# ==================================================
 
 st.sidebar.title("MEMORA AI")
 
@@ -179,8 +227,6 @@ selected_memory = st.sidebar.selectbox(
     "Select Memory Type",
     list(MEMORY_TYPES.keys())
 )
-
-st.session_state.active_memory = selected_memory
 
 st.sidebar.info(
     MEMORY_TYPES[selected_memory]
@@ -224,37 +270,20 @@ st.sidebar.subheader("About MEMORA AI")
 
 st.sidebar.write(
     "MEMORA AI is a local AI chatbot that uses "
-    "different memory techniques to remember "
-    "conversation information."
+    "LangChain memory techniques to remember "
+    "and retrieve conversation information."
 )
+
+st.sidebar.markdown("---")
 
 st.sidebar.caption(
-    "Powered by Ollama, Gemma 3 and LangChain"
+    "Powered by Ollama | Gemma 3 | LangChain"
 )
 
 
-# --------------------------------------------------
-# LOAD LOCAL MODELS
-# --------------------------------------------------
-
-@st.cache_resource
-def load_models():
-
-    chat_model = ChatOllama(
-        model="gemma3:1b",
-        temperature=0.7
-    )
-
-    embedding_model = OllamaEmbeddings(
-        model="embeddinggemma"
-    )
-
-    return chat_model, embedding_model
-
-
-# --------------------------------------------------
-# MODEL INITIALIZATION
-# --------------------------------------------------
+# ==================================================
+# 8. INITIALIZE MODELS
+# ==================================================
 
 try:
 
@@ -263,51 +292,61 @@ try:
 except Exception as error:
 
     st.error(
-        "Unable to initialize the AI models. "
+        "Unable to initialize AI models. "
         "Please check your Ollama installation."
     )
 
-    st.caption(str(error))
+    st.code(str(error))
 
     st.stop()
 
 
-# --------------------------------------------------
-# ACTIVE MEMORY
-# --------------------------------------------------
+# ==================================================
+# 9. ACTIVE MEMORY
+# ==================================================
 
 memory = st.session_state.memory_data[selected_memory]
 
 
-# --------------------------------------------------
-# MAIN INTERFACE
-# --------------------------------------------------
+# ==================================================
+# 10. MAIN TITLE
+# ==================================================
 
 st.title("MEMORA AI")
 
-st.caption(
+st.markdown(
     "An AI That Remembers, Understands & Responds."
 )
+
+st.markdown("---")
 
 st.markdown(
     f"**Active Memory:** {selected_memory}"
 )
 
-st.markdown("---")
 
-
-# --------------------------------------------------
-# LANGCHAIN PROMPT
-# --------------------------------------------------
+# ==================================================
+# 11. LANGCHAIN PROMPT
+# ==================================================
 
 prompt = ChatPromptTemplate.from_messages([
 
     (
         "system",
-        "You are MEMORA AI, a helpful AI assistant. "
-        "Answer clearly and accurately. "
-        "Use the provided memory context when relevant.\n\n"
-        "Memory Context:\n{context}"
+        """
+        You are MEMORA AI, a helpful and intelligent
+        AI assistant.
+
+        Answer the user's questions clearly and accurately.
+
+        Use the supplied memory context when relevant.
+
+        If the requested information is not available
+        in memory, do not invent personal facts.
+
+        Memory Context:
+        {context}
+        """
     ),
 
     MessagesPlaceholder(
@@ -321,13 +360,12 @@ prompt = ChatPromptTemplate.from_messages([
 
 ])
 
-
 chain = prompt | llm
 
 
-# --------------------------------------------------
-# GET MEMORY CONTEXT
-# --------------------------------------------------
+# ==================================================
+# 12. GET MEMORY CONTEXT
+# ==================================================
 
 def get_memory_context(user_input):
 
@@ -338,7 +376,7 @@ def get_memory_context(user_input):
     selected_history = []
 
 
-    # 1. BUFFER MEMORY
+    # BUFFER MEMORY
 
     if selected_memory == "Buffer Memory":
 
@@ -349,19 +387,19 @@ def get_memory_context(user_input):
         )
 
 
-    # 2. SUMMARY MEMORY
+    # SUMMARY MEMORY
 
     elif selected_memory == "Summary Memory":
 
         selected_history = []
 
         context = (
-            "Previous Conversation Summary:\n"
+            "Previous conversation summary:\n"
             + memory["summary"]
         )
 
 
-    # 3. BUFFER WINDOW MEMORY
+    # BUFFER WINDOW MEMORY
 
     elif selected_memory == "Buffer Window Memory":
 
@@ -372,7 +410,7 @@ def get_memory_context(user_input):
         )
 
 
-    # 4. VECTOR STORE MEMORY
+    # VECTOR STORE MEMORY
 
     elif selected_memory == "Vector Store Memory":
 
@@ -397,19 +435,19 @@ def get_memory_context(user_input):
             )
 
             context = (
-                "Relevant Previous Conversation Information:\n"
+                "Relevant previous conversation information:\n"
                 + memories
             )
 
 
-    # 5. ENTITY MEMORY
+    # ENTITY MEMORY
 
     elif selected_memory == "Entity Memory":
 
         selected_history = []
 
         context = (
-            "Previously Remembered Entities and Facts:\n"
+            "Previously remembered entities and facts:\n"
             + memory["entities"]
         )
 
@@ -417,9 +455,9 @@ def get_memory_context(user_input):
     return context, selected_history
 
 
-# --------------------------------------------------
-# UPDATE MEMORY
-# --------------------------------------------------
+# ==================================================
+# 13. UPDATE MEMORY
+# ==================================================
 
 def update_memory(user_input, answer):
 
@@ -434,7 +472,7 @@ def update_memory(user_input, answer):
     ])
 
 
-    # SUMMARY MEMORY UPDATE
+    # SUMMARY MEMORY
 
     if selected_memory == "Summary Memory":
 
@@ -451,6 +489,7 @@ def update_memory(user_input, answer):
         Assistant: {answer}
 
         Return a concise updated summary.
+        Only include information supported by the conversation.
         """
 
         result = llm.invoke(summary_prompt)
@@ -458,7 +497,7 @@ def update_memory(user_input, answer):
         memory["summary"] = str(result.content)
 
 
-    # VECTOR STORE MEMORY UPDATE
+    # VECTOR STORE MEMORY
 
     elif selected_memory == "Vector Store Memory":
 
@@ -477,7 +516,7 @@ def update_memory(user_input, answer):
         memory["vector_count"] += 1
 
 
-    # ENTITY MEMORY UPDATE
+    # ENTITY MEMORY
 
     elif selected_memory == "Entity Memory":
 
@@ -503,9 +542,9 @@ def update_memory(user_input, answer):
         memory["entities"] = str(result.content)
 
 
-# --------------------------------------------------
-# DISPLAY CHAT HISTORY
-# --------------------------------------------------
+# ==================================================
+# 14. DISPLAY CHAT HISTORY
+# ==================================================
 
 for message in memory["messages"]:
 
@@ -514,9 +553,9 @@ for message in memory["messages"]:
         st.markdown(message["content"])
 
 
-# --------------------------------------------------
-# CHAT INPUT
-# --------------------------------------------------
+# ==================================================
+# 15. CHAT INPUT AND RESPONSE
+# ==================================================
 
 user_input = st.chat_input(
     "Ask MEMORA AI anything..."
@@ -555,7 +594,7 @@ if user_input:
                 st.markdown(answer)
 
 
-        # Save successful conversation
+        # Save conversation messages
 
         memory["messages"].append({
 
@@ -576,26 +615,36 @@ if user_input:
 
         # Update selected memory
 
-        update_memory(
-            user_input,
-            answer
-        )
+        try:
+
+            update_memory(
+                user_input,
+                answer
+            )
+
+        except Exception as memory_error:
+
+            st.warning(
+                "Response generated, but memory update failed."
+            )
+
+            st.caption(str(memory_error))
 
 
     except Exception as error:
 
         st.error(
             "Unable to generate a response. "
-            "Please check whether Ollama is running "
-            "and the required models are installed."
+            "Check whether Ollama is running and "
+            "the required models are installed."
         )
 
-        st.caption(str(error))
+        st.code(str(error))
 
 
-# --------------------------------------------------
-# DOWNLOAD CHAT
-# --------------------------------------------------
+# ==================================================
+# 16. DOWNLOAD CONVERSATION
+# ==================================================
 
 if memory["messages"]:
 
@@ -623,12 +672,21 @@ if memory["messages"]:
     )
 
 
-# --------------------------------------------------
-# FOOTER
-# --------------------------------------------------
+# ==================================================
+# 17. FOOTER
+# ==================================================
 
 st.markdown("---")
 
-st.caption(
-    "MEMORA AI | Local AI Chatbot with LangChain Memory"
+st.markdown(
+    """
+    <div style="
+        text-align:center;
+        color:#cbd5e1;
+        padding:10px;
+    ">
+        MEMORA AI | Local AI Chatbot with LangChain Memory
+    </div>
+    """,
+    unsafe_allow_html=True
 )
